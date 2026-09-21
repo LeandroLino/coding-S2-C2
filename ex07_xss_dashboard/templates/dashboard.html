@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-br">
+<head><meta charset="utf-8"><title>Dashboard (seguro)</title></head>
+<body>
+<h1>Incidentes — dashboard seguro</h1>
+<table border="1">
+  <tr><th>Título</th><th>Ativo</th></tr>
+  {% for incidente in incidentes %}
+  <tr>
+    <td>{{ incidente.titulo }}</td>
+    <td><img src="/icone.png" alt="{{ incidente.ativo }}"></td>
+  </tr>
+  {% endfor %}
+</table>
+</body>
+</html>

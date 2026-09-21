@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pt-br">
+<head><meta charset="utf-8"><title>Dashboard INSEGURO</title></head>
+<body>
+<h1 style="color:red">⚠ Dashboard INSEGURO — apenas para comparação, nunca usar em produção</h1>
+<!-- `|safe` disables Jinja2's auto-escaping; any value that reaches the
+     page unescaped can break out of the HTML text or the attribute it
+     sits in. This route exists only to contrast with /dashboard. -->
+<table border="1">
+  <tr><th>Título</th><th>Ativo</th></tr>
+  {% for incidente in incidentes %}
+  <tr>
+    <td>{{ incidente.titulo | safe }}</td>
+    <td><img src="/icone.png" alt="{{ incidente.ativo | safe }}"></td>
+  </tr>
+  {% endfor %}
+</table>
+</body>
+</html>
