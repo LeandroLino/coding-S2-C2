@@ -10,12 +10,6 @@ instead of as separate fallback machinery in the engine module.
 from logic.storage_recommendation import Profile, Rule, const
 
 
-def cannot_tolerate_stale_reads(p: Profile) -> bool:
-    """If the data is not allowed to lag behind reality, consistency must
-    win over availability, regardless of which engine stores it."""
-    return p.needs_acid or not p.tolerates_consistency_delay
-
-
 def _default_database(p: Profile) -> str:
     # Fixed schema + ACID needs -> joins/constraints matter more than raw
     # write throughput, so a relational engine fits better.
@@ -24,7 +18,10 @@ def _default_database(p: Profile) -> str:
 
 
 def _default_cap(p: Profile) -> str:
-    return "CP" if cannot_tolerate_stale_reads(p) else "AP"
+    # If the data is not allowed to lag behind reality, consistency must
+    # win over availability, regardless of which engine stores it.
+    cannot_tolerate_stale_reads = p.needs_acid or not p.tolerates_consistency_delay
+    return "CP" if cannot_tolerate_stale_reads else "AP"
 
 
 # Justification/OWASP text keyed by the same boolean decision used to pick
@@ -44,13 +41,15 @@ _DEFAULT_TEXT_BY_CAP_DECISION = {
 
 
 def _default_justification(p: Profile) -> str:
-    return _DEFAULT_TEXT_BY_CAP_DECISION[cannot_tolerate_stale_reads(p)][0]
+    cannot_tolerate_stale_reads = p.needs_acid or not p.tolerates_consistency_delay
+    return _DEFAULT_TEXT_BY_CAP_DECISION[cannot_tolerate_stale_reads][0]
 
 
 def _default_owasp_risk(p: Profile) -> str:
     if p.sensitive_data:
         return "A02"  # Cryptographic Failures: sensitive data mishandled
-    return _DEFAULT_TEXT_BY_CAP_DECISION[cannot_tolerate_stale_reads(p)][1]
+    cannot_tolerate_stale_reads = p.needs_acid or not p.tolerates_consistency_delay
+    return _DEFAULT_TEXT_BY_CAP_DECISION[cannot_tolerate_stale_reads][1]
 
 
 RULES: list[Rule] = [
