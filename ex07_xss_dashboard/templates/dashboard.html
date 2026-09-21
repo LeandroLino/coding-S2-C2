@@ -3,6 +3,7 @@
 <head><meta charset="utf-8"><title>Dashboard (seguro)</title></head>
 <body>
 <h1>Incidentes — dashboard seguro</h1>
+{# No `|safe` here: it would disable Jinja2's auto-escaping and let titulo/ativo execute as HTML or break out of the alt attribute. #}
 <table border="1">
   <tr><th>Título</th><th>Ativo</th></tr>
   {% for incidente in incidentes %}
