@@ -10,7 +10,7 @@ from typing import Optional
 
 from flask import request
 
-from diplomat.mysql import get_mysql_connection
+from diplomat.mysql import run_query
 
 
 @dataclass
@@ -26,17 +26,8 @@ def get_authenticated_analyst() -> Optional[Analyst]:
     if not api_key:
         return None
 
-    conn = get_mysql_connection()
-    try:
-        cur = conn.cursor(dictionary=True)
-        cur.execute(
-            "SELECT id, name, level FROM analysts WHERE api_key = %s",
-            (api_key,),
-        )
-        row = cur.fetchone()
-    finally:
-        conn.close()
-
-    if row is None:
+    rows = run_query("SELECT id, nome, nivel FROM analistas WHERE api_key = %s", (api_key,))
+    if not rows:
         return None
-    return Analyst(id=row["id"], name=row["name"], level=row["level"])
+    row = rows[0]
+    return Analyst(id=row["id"], name=row["nome"], level=row["nivel"])
