@@ -20,11 +20,11 @@ def json_error(message: str, status_code: int):
 
 
 _DEFAULT_MESSAGES = {
-    400: "requisicao invalida",
-    401: "nao autenticado",
-    403: "acesso negado",
-    404: "recurso nao encontrado",
-    429: "muitas requisicoes",
+    400: "invalid request",
+    401: "unauthorized",
+    403: "forbidden",
+    404: "not found",
+    429: "too many requests",
 }
 
 
