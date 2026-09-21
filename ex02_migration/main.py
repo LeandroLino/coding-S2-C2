@@ -11,17 +11,16 @@ from diplomat.mongo import get_mongo_db
 from diplomat.mysql import run_query
 from ex02_migration.setup_mysql import setup_mysql
 
-_JOIN_QUERY = """
-    SELECT a.tipo, a.severidade,
-           t.nome AS ativo_nome, t.ip AS ativo_ip, t.criticidade AS ativo_criticidade
-    FROM alertas a
-    JOIN ativos t ON t.id = a.ativo_id
-"""
-
 
 def read_alerts_with_assets() -> list[dict]:
     """Read every alert joined with its asset from MySQL."""
-    return run_query(_JOIN_QUERY)
+    query = """
+        SELECT a.tipo, a.severidade,
+               t.nome AS ativo_nome, t.ip AS ativo_ip, t.criticidade AS ativo_criticidade
+        FROM alertas a
+        JOIN ativos t ON t.id = a.ativo_id
+    """
+    return run_query(query)
 
 
 def to_document(row: dict) -> dict:
