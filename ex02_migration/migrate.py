@@ -8,7 +8,7 @@ alert's asset data directly inside the MongoDB document, trading a JOIN
 at read time for duplicated asset data across every alert document.
 """
 from diplomat.mongo import get_mongo_db
-from diplomat.mysql import get_mysql_connection
+from diplomat.mysql import run_query
 
 _JOIN_QUERY = """
     SELECT a.tipo, a.severidade,
@@ -20,13 +20,7 @@ _JOIN_QUERY = """
 
 def read_alerts_with_assets() -> list[dict]:
     """Read every alert joined with its asset from MySQL."""
-    conn = get_mysql_connection()
-    try:
-        cur = conn.cursor(dictionary=True)
-        cur.execute(_JOIN_QUERY)
-        return cur.fetchall()
-    finally:
-        conn.close()
+    return run_query(_JOIN_QUERY)
 
 
 def to_document(row: dict) -> dict:
