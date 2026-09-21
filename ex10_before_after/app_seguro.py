@@ -62,7 +62,7 @@ def _authenticate(required_level: int):
 
 
 @app.route("/api/usuarios/buscar")
-def buscar():
+def search_users():
     nome = request.args.get("nome", "")
     rows = run_query(
         "SELECT id, nome, email, nivel_acesso FROM usuarios_ex10 WHERE nome LIKE %s",
@@ -72,12 +72,12 @@ def buscar():
 
 
 @app.route("/perfil")
-def perfil():
-    return render_template("perfil.html", usuario=request.args.get("u", ""))
+def profile():
+    return render_template("perfil.html", user=request.args.get("u", ""))
 
 
 @app.route("/api/usuarios/<int:uid>", methods=["DELETE"])
-def remover(uid):
+def delete_user(uid):
     _, error = _authenticate(REQUIRED_LEVEL_TO_DELETE)
     if error is not None:
         return error
@@ -89,7 +89,7 @@ def remover(uid):
 
 
 @app.route("/api/relatorio")
-def relatorio():
+def report():
     # A falha original (consultar uma tabela inexistente) é mantida de
     # propósito para provar a defesa: o erro ainda acontece, mas o
     # register_error_handlers global garante que só "erro interno" sai
