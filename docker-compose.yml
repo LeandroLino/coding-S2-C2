@@ -1,0 +1,28 @@
+# Local lab environment for the exercises that need real databases
+# (exercises 2, 3, 4, 5, 6, 7, 8, 9, 10). Reads credentials from ".env"
+# via variable substitution -- never hardcode them here.
+services:
+  mysql-lab:
+    image: mysql:8.0
+    container_name: mysql-lab
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-lab-data:/var/lib/mysql
+
+  mongo-lab:
+    image: mongo:7
+    container_name: mongo-lab
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-lab-data:/data/db
+
+volumes:
+  mysql-lab-data:
+  mongo-lab-data:
