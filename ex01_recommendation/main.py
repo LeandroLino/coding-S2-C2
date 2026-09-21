@@ -2,7 +2,7 @@
 Exercise 1 demo — prints the recommendation for each sample profile from
 the assignment, in the same layout as the expected output.
 """
-from logic.storage_recommendation import recomendar
+from ex01_recommendation.storage_recommendation import recomendar
 
 PERFIS = {
     "credenciais_do_SOC": {

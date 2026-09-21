@@ -7,7 +7,7 @@ catch-all default rule (`matches` always True), so the "what if nothing
 named matches" case lives here as data, alongside the named rules,
 instead of as separate fallback machinery in the engine module.
 """
-from logic.storage_recommendation import Profile, Rule, const
+from ex01_recommendation.storage_recommendation import Profile, Rule, const
 
 
 def _cannot_tolerate_stale_reads(p: Profile) -> bool:
