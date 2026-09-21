@@ -19,7 +19,7 @@ from diplomat.mongo import get_mongo_db
 from diplomat.mysql import get_mysql_connection
 from ex04_audit_trail.setup_mysql import setup_mysql
 
-MIN_NIVEL_PARA_ALTERAR = 5
+MIN_LEVEL_TO_ALTER = 5
 
 
 def _fetch_user(cur, user_id: int) -> dict | None:
@@ -27,18 +27,18 @@ def _fetch_user(cur, user_id: int) -> dict | None:
     return cur.fetchone()
 
 
-def registrar_auditoria(
-    admin_id: int, alvo_id: int, nivel_anterior: int | None, novo_nivel: int, resultado: str
+def record_audit(
+    admin_id: int, target_id: int, previous_level: int | None, new_level: int, result: str
 ) -> None:
     """Record every attempt (accepted or refused) in the Mongo audit trail."""
     db = get_mongo_db()
     db.auditoria.insert_one(
         {
             "quem": admin_id,
-            "alvo": alvo_id,
-            "nivel_anterior": nivel_anterior,
-            "nivel_novo": novo_nivel,
-            "resultado": resultado,
+            "alvo": target_id,
+            "nivel_anterior": previous_level,
+            "nivel_novo": new_level,
+            "resultado": result,
             "timestamp": datetime.now(timezone.utc),
         }
     )
@@ -53,66 +53,66 @@ def alterar_nivel(admin_id: int, alvo_id: int, novo_nivel: int) -> dict:
     try:
         cur = conn.cursor(dictionary=True)
         admin = _fetch_user(cur, admin_id)
-        alvo = _fetch_user(cur, alvo_id)
-        nivel_anterior = alvo["nivel_acesso"] if alvo else None
-        nivel_atual = nivel_anterior
+        target = _fetch_user(cur, alvo_id)
+        previous_level = target["nivel_acesso"] if target else None
+        current_level = previous_level
 
-        if admin is None or admin["nivel_acesso"] < MIN_NIVEL_PARA_ALTERAR:
-            resultado, motivo = "RECUSADO", "admin sem privilégio"
+        if admin is None or admin["nivel_acesso"] < MIN_LEVEL_TO_ALTER:
+            result, reason = "RECUSADO", "admin sem privilégio"
         elif admin_id == alvo_id:
-            resultado, motivo = "RECUSADO", "auto-promoção"
-        elif alvo is None:
-            resultado, motivo = "RECUSADO", "alvo inexistente"
+            result, reason = "RECUSADO", "auto-promoção"
+        elif target is None:
+            result, reason = "RECUSADO", "alvo inexistente"
         else:
             cur.execute(
                 "UPDATE usuarios SET nivel_acesso = %s WHERE id = %s", (novo_nivel, alvo_id)
             )
             conn.commit()
-            resultado, motivo = "OK", None
-            nivel_atual = novo_nivel
+            result, reason = "OK", None
+            current_level = novo_nivel
 
-        if resultado == "RECUSADO":
+        if result == "RECUSADO":
             conn.rollback()
     finally:
         conn.close()
 
-    registrar_auditoria(admin_id, alvo_id, nivel_anterior, novo_nivel, resultado)
+    record_audit(admin_id, alvo_id, previous_level, novo_nivel, result)
 
     return {
-        "resultado": resultado,
-        "motivo": motivo,
-        "alvo_nome": alvo["nome"] if alvo else None,
-        "nivel_anterior": nivel_anterior,
-        "nivel_atual": nivel_atual,
+        "result": result,
+        "reason": reason,
+        "target_name": target["nome"] if target else None,
+        "previous_level": previous_level,
+        "current_level": current_level,
     }
 
 
 def _print_attempt(admin_id: int, alvo_id: int, novo_nivel: int, outcome: dict) -> None:
     call = f"alterar_nivel({admin_id}, {alvo_id}, {novo_nivel})"
-    nome = outcome["alvo_nome"].capitalize() if outcome["alvo_nome"] else None
-    if outcome["resultado"] == "OK":
-        print(f"{call} -> OK. commit. {nome}: {outcome['nivel_anterior']} -> {novo_nivel}")
-    elif nome is None:
-        print(f"{call} -> RECUSADO ({outcome['motivo']}). rollback.")
+    name = outcome["target_name"].capitalize() if outcome["target_name"] else None
+    if outcome["result"] == "OK":
+        print(f"{call} -> OK. commit. {name}: {outcome['previous_level']} -> {novo_nivel}")
+    elif name is None:
+        print(f"{call} -> RECUSADO ({outcome['reason']}). rollback.")
     else:
-        print(f"{call} -> RECUSADO ({outcome['motivo']}). rollback. {nome}: {outcome['nivel_atual']}")
+        print(f"{call} -> RECUSADO ({outcome['reason']}). rollback. {name}: {outcome['current_level']}")
 
 
 def run_demo() -> None:
     setup_mysql()
     get_mongo_db().auditoria.delete_many({})  # keep this re-runnable
 
-    tentativas = [(1, 2, 4), (2, 3, 5), (1, 1, 9), (1, 99, 3)]
-    for admin_id, alvo_id, novo_nivel in tentativas:
+    attempts = [(1, 2, 4), (2, 3, 5), (1, 1, 9), (1, 99, 3)]
+    for admin_id, alvo_id, novo_nivel in attempts:
         outcome = alterar_nivel(admin_id, alvo_id, novo_nivel)
         _print_attempt(admin_id, alvo_id, novo_nivel, outcome)
 
     db = get_mongo_db()
     total = db.auditoria.count_documents({})
-    recusados = db.auditoria.count_documents({"resultado": "RECUSADO"})
+    refused = db.auditoria.count_documents({"resultado": "RECUSADO"})
     print(f"\nTrilha de auditoria ao final: {total} documentos "
-          f"({total - recusados} sucesso, {recusados} recusas)")
-    print(f'db.auditoria.count_documents({{"resultado":"RECUSADO"}}) -> {recusados}')
+          f"({total - refused} sucesso, {refused} recusas)")
+    print(f'db.auditoria.count_documents({{"resultado":"RECUSADO"}}) -> {refused}')
 
 
 if __name__ == "__main__":
