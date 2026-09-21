@@ -10,12 +10,6 @@ instead of as separate fallback machinery in the engine module.
 from logic.storage_recommendation import Profile, Rule, const
 
 
-def needs_relational_integrity(p: Profile) -> bool:
-    """Fixed schema + ACID needs -> joins/constraints matter more than raw
-    write throughput, so a relational engine fits better."""
-    return p.fixed_schema and p.needs_acid
-
-
 def cannot_tolerate_stale_reads(p: Profile) -> bool:
     """If the data is not allowed to lag behind reality, consistency must
     win over availability, regardless of which engine stores it."""
@@ -23,7 +17,10 @@ def cannot_tolerate_stale_reads(p: Profile) -> bool:
 
 
 def _default_database(p: Profile) -> str:
-    return "MySQL" if needs_relational_integrity(p) else "MongoDB"
+    # Fixed schema + ACID needs -> joins/constraints matter more than raw
+    # write throughput, so a relational engine fits better.
+    needs_relational_integrity = p.fixed_schema and p.needs_acid
+    return "MySQL" if needs_relational_integrity else "MongoDB"
 
 
 def _default_cap(p: Profile) -> str:
