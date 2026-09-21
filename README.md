@@ -27,3 +27,7 @@ copy .env.example .env   # then fill in real credentials
 
 Requires `mongo-lab` and `mysql-lab` Docker containers running (see course
 lab environment guide). Credentials must never be hardcoded in source files.
+
+```powershell
+docker compose up -d   # starts mysql-lab (3306) and mongo-lab (27017)
+```
