@@ -13,7 +13,6 @@ Machine Learning, Flask APIs, OWASP Top 10 defenses).
 - `providers/errors.py` — standard `{"erro": ...}` JSON error responses; never leaks internal details on 500.
 - `providers/app_factory.py` — `create_app()` factory wiring security headers + error handlers for every exercise app.
 - `logic/auth.py` — shared X-API-Key authentication logic (MySQL-backed).
-- `seed/` — scripts to populate MySQL/MongoDB with sample data.
 - `ex01_recommendation/` ... `ex10_challenge/` — one folder per exercise.
 
 ## Setup
