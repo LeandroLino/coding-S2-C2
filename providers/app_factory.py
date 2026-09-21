@@ -7,8 +7,8 @@ error handling are applied consistently everywhere.
 """
 from flask import Flask
 
-from common.errors import register_error_handlers
-from common.security_headers import apply_security_headers
+from providers.errors import register_error_handlers
+from providers.security_headers import apply_security_headers
 
 
 def create_app(import_name: str) -> Flask:
