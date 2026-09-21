@@ -7,13 +7,19 @@ catch-all default rule (`matches` always True), so the "what if nothing
 named matches" case lives here as data, alongside the named rules,
 instead of as separate fallback machinery in the engine module.
 """
-from logic.storage_recommendation import (
-    Profile,
-    Rule,
-    cannot_tolerate_stale_reads,
-    const,
-    needs_relational_integrity,
-)
+from logic.storage_recommendation import Profile, Rule, const
+
+
+def needs_relational_integrity(p: Profile) -> bool:
+    """Fixed schema + ACID needs -> joins/constraints matter more than raw
+    write throughput, so a relational engine fits better."""
+    return p.fixed_schema and p.needs_acid
+
+
+def cannot_tolerate_stale_reads(p: Profile) -> bool:
+    """If the data is not allowed to lag behind reality, consistency must
+    win over availability, regardless of which engine stores it."""
+    return p.needs_acid or not p.tolerates_consistency_delay
 
 
 def _default_database(p: Profile) -> str:

@@ -49,18 +49,6 @@ def const(value: str) -> Callable[[Profile], str]:
     return lambda _p: value
 
 
-def needs_relational_integrity(p: Profile) -> bool:
-    """Fixed schema + ACID needs -> joins/constraints matter more than raw
-    write throughput, so a relational engine fits better."""
-    return p.fixed_schema and p.needs_acid
-
-
-def cannot_tolerate_stale_reads(p: Profile) -> bool:
-    """If the data is not allowed to lag behind reality, consistency must
-    win over availability, regardless of which engine stores it."""
-    return p.needs_acid or not p.tolerates_consistency_delay
-
-
 def recommend(profile: dict) -> dict:
     """Recommend a database, CAP priority and OWASP risk for `profile`."""
     # Local import: rules.py imports Profile/Rule from this module, so
