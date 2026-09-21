@@ -63,83 +63,6 @@ def _pick_cap(p: Profile) -> str:
     return "CP" if _cannot_tolerate_stale_reads(p) else "AP"
 
 
-# Ordered, named rules covering the scenarios described in the exercise.
-# The first matching rule wins; unmatched profiles fall back to
-# `_default_recommendation`, which derives the same decision compositionally.
-RULES: list[Rule] = [
-    Rule(
-        name="access_control_credentials",
-        matches=lambda p: (
-            p.sensitive_data and p.needs_acid and not p.tolerates_consistency_delay
-        ),
-        database="MySQL",
-        cap="CP",
-        justification=(
-            "authenticating with a stale or half-written credential is worse "
-            "than the service being briefly unavailable"
-        ),
-        owasp_risk="A07",  # Identification and Authentication Failures
-    ),
-    Rule(
-        name="audit_trail",
-        matches=lambda p: (
-            p.sensitive_data and not p.needs_acid and not p.tolerates_consistency_delay
-        ),
-        database="MongoDB",
-        cap="CP",
-        justification=(
-            "an audit record that disagrees with what actually happened is "
-            "worthless as evidence, even if it was written fast"
-        ),
-        owasp_risk="A08",  # Software and Data Integrity Failures
-    ),
-    Rule(
-        name="high_volume_telemetry",
-        matches=lambda p: (
-            not p.sensitive_data and p.tolerates_consistency_delay and p.horizontal_scale
-        ),
-        database="MongoDB",
-        cap="AP",
-        justification=(
-            "losing a second of freshness in a metric is acceptable; "
-            "refusing new telemetry over a consistency check is not"
-        ),
-        owasp_risk="A09",  # Security Logging and Monitoring Failures
-    ),
-    Rule(
-        name="license_inventory",
-        matches=lambda p: (
-            p.needs_acid
-            and p.fixed_schema
-            and not p.tolerates_consistency_delay
-            and not p.sensitive_data
-        ),
-        database="MySQL",
-        cap="CP",
-        justification=(
-            "selling the same license twice because two writes raced each "
-            "other is unacceptable, even if it means rejecting a purchase"
-        ),
-        owasp_risk="A08",  # Software and Data Integrity Failures
-    ),
-    Rule(
-        name="session_cache",
-        matches=lambda p: (
-            p.sensitive_data
-            and not p.needs_acid
-            and p.tolerates_consistency_delay
-            and p.horizontal_scale
-        ),
-        database="MongoDB",
-        cap="AP",
-        justification=(
-            "a session cache that is briefly stale is fine; a login page "
-            "going down because one node is desynced is not"
-        ),
-        owasp_risk="A07",  # Identification and Authentication Failures
-    ),
-]
-
 # Fallback text keyed by the same boolean decision used to pick CAP, so the
 # default path stays a lookup instead of an ad-hoc if/else chain.
 _FALLBACK_BY_CAP_DECISION = {
@@ -173,6 +96,10 @@ def _default_recommendation(p: Profile) -> Rule:
 
 def recommend(profile: dict) -> dict:
     """Recommend a database, CAP priority and OWASP risk for `profile`."""
+    # Local import: `rules.py` imports Profile/Rule from this module, so
+    # importing RULES at module level here would create a circular import.
+    from ex01_recommendation.rules import RULES
+
     p = Profile.from_dict(profile)
     rule = next((r for r in RULES if r.matches(p)), None) or _default_recommendation(p)
     return {
