@@ -9,6 +9,7 @@ at read time for duplicated asset data across every alert document.
 """
 from diplomat.mongo import get_mongo_db
 from diplomat.mysql import run_query
+from ex02_migration.setup_mysql import setup_mysql
 
 _JOIN_QUERY = """
     SELECT a.tipo, a.severidade,
@@ -37,6 +38,7 @@ def to_document(row: dict) -> dict:
 
 
 def migrate() -> None:
+    setup_mysql()
     rows = read_alerts_with_assets()
     documents = [to_document(row) for row in rows]
 
