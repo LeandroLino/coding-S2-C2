@@ -23,41 +23,41 @@ from providers.errors import json_error
 
 app = create_app(__name__)
 
-COLUNAS = {"data": "criado_em", "sev": "severidade", "ip": "ip_origem"}
-ORDEM = {"asc": "ASC", "desc": "DESC"}
-DEFAULT_TAMANHO = 10
-MAX_TAMANHO = 100
+ALLOWED_COLUMNS = {"data": "criado_em", "sev": "severidade", "ip": "ip_origem"}
+ALLOWED_ORDER = {"asc": "ASC", "desc": "DESC"}
+DEFAULT_SIZE = 10
+MAX_SIZE = 100
 
 
 @app.route("/api/eventos", methods=["GET"])
-def listar_eventos():
+def list_events():
     try:
-        coluna = validate_whitelisted_value(request.args.get("ordenar_por", "data"), COLUNAS)
+        column = validate_whitelisted_value(request.args.get("ordenar_por", "data"), ALLOWED_COLUMNS)
     except ValueError:
         return json_error("campo de ordenação inválido", 400)
 
     try:
-        direcao = validate_whitelisted_value(request.args.get("ordem", "asc"), ORDEM)
+        direction = validate_whitelisted_value(request.args.get("ordem", "asc"), ALLOWED_ORDER)
     except ValueError:
         return json_error("ordem inválida", 400)
 
     try:
-        tamanho = validate_positive_int(
-            request.args.get("tamanho", DEFAULT_TAMANHO), max_value=MAX_TAMANHO
+        size = validate_positive_int(
+            request.args.get("tamanho", DEFAULT_SIZE), max_value=MAX_SIZE
         )
     except ValueError:
         return json_error("tamanho deve ser inteiro", 400)
 
-    # `coluna`/`direcao` only ever hold whitelisted literals at this point,
-    # so interpolating them here is safe; `tamanho` is real data and still
+    # `column`/`direction` only ever hold whitelisted literals at this point,
+    # so interpolating them here is safe; `size` is real data and still
     # goes through a parameterized placeholder.
-    query = f"SELECT * FROM eventos ORDER BY {coluna} {direcao} LIMIT %s"
-    rows = run_query(query, (tamanho,))
+    query = f"SELECT * FROM eventos ORDER BY {column} {direction} LIMIT %s"
+    rows = run_query(query, (size,))
     for row in rows:
         if isinstance(row.get("criado_em"), datetime):
             row["criado_em"] = row["criado_em"].isoformat()
 
-    return {"eventos": rows}, 200
+    return {"events": rows}, 200
 
 
 if __name__ == "__main__":

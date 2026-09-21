@@ -7,15 +7,15 @@ from datetime import datetime, timedelta
 
 from diplomat.mysql import run_many, run_write
 
-SEVERIDADES = ["baixa", "media", "alta", "critica"]
+SEVERITIES = ["baixa", "media", "alta", "critica"]
 EVENT_COUNT = 150
 
 
 def _random_event(i: int, reference: datetime) -> tuple:
-    severidade = random.choice(SEVERIDADES)
-    ip_origem = f"10.0.0.{random.randint(1, 254)}"
-    criado_em = reference - timedelta(minutes=random.randint(0, 60 * 24))
-    return (i, severidade, ip_origem, criado_em)
+    severity = random.choice(SEVERITIES)
+    source_ip = f"10.0.0.{random.randint(1, 254)}"
+    created_at = reference - timedelta(minutes=random.randint(0, 60 * 24))
+    return (i, severity, source_ip, created_at)
 
 
 def setup_mysql() -> None:
