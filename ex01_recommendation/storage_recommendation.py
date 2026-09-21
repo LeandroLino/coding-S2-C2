@@ -1,19 +1,22 @@
 """
 Exercise 1 — storage decision assistant engine (Aulas 1 e 8).
 
-Generic matching machinery only: the profile model, the rule shape, and
-the `recommend()`/`recomendar()` entry point that runs an ordered rule
-table. The actual rules -- including the catch-all default -- live in
-`ex01_recommendation/rules.py`, since they are this exercise's decision
-data, not generic engine logic. The default is just another `Rule` whose
-`matches` always returns True, so there is no separate "fallback" concept.
+Generic machinery only: the `Profile` value object and the
+`recommend()`/`recomendar()` entry point that runs an ordered table of
+rules. The rules themselves (including the catch-all default) are plain
+dicts living in `ex01_recommendation/rules.py`, not a custom class
+hierarchy — each rule has a `matches` predicate and four output fields
+that are either a fixed string or a `profile -> str` function, resolved
+lazily by `_resolve()`. Most rules only need fixed strings; only the
+default rule needs to compute its outputs from the profile.
 """
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any
 
 
 @dataclass(frozen=True)
 class Profile:
+    """Normalized dataset profile (booleans only, English field names)."""
     fixed_schema: bool
     needs_acid: bool
     horizontal_scale: bool
@@ -31,37 +34,25 @@ class Profile:
         )
 
 
-@dataclass(frozen=True)
-class Rule:
-    """A named decision: `matches` decides if it applies to a profile; the
-    remaining fields compute each output value from that same profile."""
-    name: str
-    matches: Callable[[Profile], bool]
-    database: Callable[[Profile], str]
-    cap: Callable[[Profile], str]
-    justification: Callable[[Profile], str]
-    owasp_risk: Callable[[Profile], str]
-
-
-def const(value: str) -> Callable[[Profile], str]:
-    """Wrap a fixed value as a Profile -> value function, for rules whose
-    outcome does not depend on which flags triggered the match."""
-    return lambda _p: value
+def _resolve(value: Any, profile: Profile) -> str:
+    """A rule's output field is either a fixed string or a function that
+    computes it from the profile (used only by the default rule)."""
+    return value(profile) if callable(value) else value
 
 
 def recommend(profile: dict) -> dict:
     """Recommend a database, CAP priority and OWASP risk for `profile`."""
-    # Local import: rules.py imports Profile/Rule from this module, so
-    # importing RULES at module level here would create a circular import.
+    # Local import: rules.py needs Profile from this module, so importing
+    # RULES at module level here would create a circular import.
     from ex01_recommendation.rules import RULES
 
     p = Profile.from_dict(profile)
-    rule = next(r for r in RULES if r.matches(p))  # RULES always ends in a catch-all
+    rule = next(r for r in RULES if r["matches"](p))  # RULES always ends in a catch-all
     return {
-        "banco": rule.database(p),
-        "cap": rule.cap(p),
-        "justificativa": rule.justification(p),
-        "risco_owasp": rule.owasp_risk(p),
+        "banco": _resolve(rule["banco"], p),
+        "cap": _resolve(rule["cap"], p),
+        "justificativa": _resolve(rule["justificativa"], p),
+        "risco_owasp": _resolve(rule["risco_owasp"], p),
     }
 
 
